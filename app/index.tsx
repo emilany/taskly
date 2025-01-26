@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ScrollView, StyleSheet, TextInput } from 'react-native'
+import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native'
 import { ShoppingListItem } from '../components/ShoppingListItem'
 import { theme } from '../theme'
 
@@ -8,15 +8,9 @@ type ShoppingListItemType = {
   name: string
 }
 
-const initialList: ShoppingListItemType[] = [
-  { id: '1', name: 'Coffee' },
-  { id: '2', name: 'Tea' },
-  { id: '3', name: 'Sugar' },
-]
-
 export default function App() {
   const [value, setValue] = useState('')
-  const [shoppingList, setShoppingList] = useState(initialList)
+  const [shoppingList, setShoppingList] = useState<ShoppingListItemType[]>([])
 
   const handleSubmit = () => {
     if (value) {
@@ -29,25 +23,31 @@ export default function App() {
   }
 
   return (
-    <ScrollView
+    <FlatList
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
       stickyHeaderIndices={[0]}
-    >
-      <TextInput
-        placeholder="e.g. Coffee"
-        style={styles.textInput}
-        value={value}
-        onChangeText={setValue}
-        returnKeyType="done"
-        onSubmitEditing={handleSubmit}
-        autoCorrect={false}
-      />
-
-      {shoppingList.map((item) => (
+      data={shoppingList}
+      renderItem={({ item }) => (
         <ShoppingListItem key={item.id} name={item.name} />
-      ))}
-    </ScrollView>
+      )}
+      ListEmptyComponent={
+        <View style={styles.listEmptyContainer}>
+          <Text>Your shopping list is empty</Text>
+        </View>
+      }
+      ListHeaderComponent={
+        <TextInput
+          placeholder="e.g. Coffee"
+          style={styles.textInput}
+          value={value}
+          onChangeText={setValue}
+          returnKeyType="done"
+          onSubmitEditing={handleSubmit}
+          autoCorrect={false}
+        />
+      }
+    />
   )
 }
 
@@ -69,5 +69,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 18,
     backgroundColor: theme.colors.white,
+  },
+  listEmptyContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 18,
   },
 })
