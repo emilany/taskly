@@ -1,13 +1,26 @@
 import AntDesign from '@expo/vector-icons/AntDesign'
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import {
+  Alert,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+} from 'react-native'
 import { theme } from '../theme'
 
 type Props = {
   name: string
   isCompleted?: boolean
+  onDelete: () => void
+  onToggleComplete: () => void
 }
 
-export const ShoppingListItem = ({ name, isCompleted }: Props) => {
+export const ShoppingListItem = ({
+  name,
+  isCompleted,
+  onDelete,
+  onToggleComplete,
+}: Props) => {
   const handleDelete = () => {
     Alert.alert(
       `Are you sure you want to delete ${name}?`,
@@ -15,7 +28,7 @@ export const ShoppingListItem = ({ name, isCompleted }: Props) => {
       [
         {
           text: 'Yes',
-          onPress: () => console.log('Ok, deleting'),
+          onPress: onDelete,
           style: 'destructive',
         },
         {
@@ -27,11 +40,12 @@ export const ShoppingListItem = ({ name, isCompleted }: Props) => {
   }
 
   return (
-    <View
+    <Pressable
       style={[
         styles.itemContainer,
         isCompleted ? styles.completedContainer : undefined,
       ]}
+      onPress={onToggleComplete}
     >
       <Text
         style={[styles.text, isCompleted ? styles.completedText : undefined]}
@@ -39,14 +53,18 @@ export const ShoppingListItem = ({ name, isCompleted }: Props) => {
         {name}
       </Text>
 
-      <TouchableOpacity onPress={handleDelete} activeOpacity={0.8}>
+      <TouchableOpacity
+        onPress={handleDelete}
+        activeOpacity={0.8}
+        disabled={isCompleted}
+      >
         <AntDesign
           name="closecircle"
           size={24}
           color={isCompleted ? theme.colors.grey : theme.colors.red}
         />
       </TouchableOpacity>
-    </View>
+    </Pressable>
   )
 }
 
