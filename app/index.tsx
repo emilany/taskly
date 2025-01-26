@@ -1,73 +1,61 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native'
 import { ShoppingListItem } from '../components/ShoppingListItem'
 import { theme } from '../theme'
+import { orderShoppingList } from '../utils/helpers'
+import { getFromStorage, saveToStorage } from '../utils/storage'
+import { ShoppingListItemType } from '../utils/types'
 
-type ShoppingListItemType = {
-  id: string
-  name: string
-  lastUpdatedTimestamp: number
-  completedAtTimestamp?: number
-}
-
-const orderShoppingList = (shoppingList: ShoppingListItemType[]) => {
-  return shoppingList.sort((item1, item2) => {
-    if (item1.completedAtTimestamp && item2.completedAtTimestamp) {
-      return item2.completedAtTimestamp - item1.completedAtTimestamp
-    }
-
-    if (item1.completedAtTimestamp && !item2.completedAtTimestamp) {
-      return 1
-    }
-
-    if (!item1.completedAtTimestamp && item2.completedAtTimestamp) {
-      return -1
-    }
-
-    if (!item1.completedAtTimestamp && !item2.completedAtTimestamp) {
-      return item2.lastUpdatedTimestamp - item1.lastUpdatedTimestamp
-    }
-
-    return 0
-  })
-}
+const storageKey = 'shopping-list'
 
 export default function App() {
   const [value, setValue] = useState('')
   const [shoppingList, setShoppingList] = useState<ShoppingListItemType[]>([])
 
+  useEffect(() => {
+    const fetchInitial = async () => {
+      const data = await getFromStorage(storageKey)
+      if (data) setShoppingList(data)
+    }
+    fetchInitial()
+  }, [])
+
   const handleSubmit = () => {
     if (value) {
-      setShoppingList([
+      const updatedShoppingList = [
         {
           id: new Date().toTimeString(),
           name: value,
           lastUpdatedTimestamp: Date.now(),
         },
         ...shoppingList,
-      ])
+      ]
+      setShoppingList(updatedShoppingList)
+      saveToStorage(storageKey, updatedShoppingList)
       setValue('')
     }
   }
 
   const handleDelete = (id: string) => {
-    setShoppingList(shoppingList.filter((item) => item.id !== id))
+    const updatedShoppingList = shoppingList.filter((item) => item.id !== id)
+    setShoppingList(updatedShoppingList)
+    saveToStorage(storageKey, updatedShoppingList)
   }
 
   const handleToggleComplete = (id: string) => {
-    setShoppingList(
-      shoppingList.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              lastUpdatedTimestamp: Date.now(),
-              completedAtTimestamp: item.completedAtTimestamp
-                ? undefined
-                : Date.now(),
-            }
-          : item
-      )
+    const updatedShoppingList = shoppingList.map((item) =>
+      item.id === id
+        ? {
+            ...item,
+            lastUpdatedTimestamp: Date.now(),
+            completedAtTimestamp: item.completedAtTimestamp
+              ? undefined
+              : Date.now(),
+          }
+        : item
     )
+    setShoppingList(updatedShoppingList)
+    saveToStorage(storageKey, updatedShoppingList)
   }
 
   return (
