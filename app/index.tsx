@@ -1,3 +1,4 @@
+import * as Haptics from 'expo-haptics'
 import { useEffect, useState } from 'react'
 import {
   FlatList,
@@ -41,6 +42,7 @@ export default function App() {
         ...shoppingList,
       ]
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
       setShoppingList(updatedShoppingList)
       saveToStorage(storageKey, updatedShoppingList)
       setValue('')
@@ -50,22 +52,30 @@ export default function App() {
   const handleDelete = (id: string) => {
     const updatedShoppingList = shoppingList.filter((item) => item.id !== id)
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
     setShoppingList(updatedShoppingList)
     saveToStorage(storageKey, updatedShoppingList)
   }
 
   const handleToggleComplete = (id: string) => {
-    const updatedShoppingList = shoppingList.map((item) =>
-      item.id === id
-        ? {
-            ...item,
-            lastUpdatedTimestamp: Date.now(),
-            completedAtTimestamp: item.completedAtTimestamp
-              ? undefined
-              : Date.now(),
-          }
-        : item
-    )
+    const updatedShoppingList = shoppingList.map((item) => {
+      if (item.id === id) {
+        if (item.completedAtTimestamp) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+        } else {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+        }
+
+        return {
+          ...item,
+          lastUpdatedTimestamp: Date.now(),
+          completedAtTimestamp: item.completedAtTimestamp
+            ? undefined
+            : Date.now(),
+        }
+      }
+      return item
+    })
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     setShoppingList(updatedShoppingList)
     saveToStorage(storageKey, updatedShoppingList)
