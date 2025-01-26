@@ -6,6 +6,30 @@ import { theme } from '../theme'
 type ShoppingListItemType = {
   id: string
   name: string
+  lastUpdatedTimestamp: number
+  completedAtTimestamp?: number
+}
+
+const orderShoppingList = (shoppingList: ShoppingListItemType[]) => {
+  return shoppingList.sort((item1, item2) => {
+    if (item1.completedAtTimestamp && item2.completedAtTimestamp) {
+      return item2.completedAtTimestamp - item1.completedAtTimestamp
+    }
+
+    if (item1.completedAtTimestamp && !item2.completedAtTimestamp) {
+      return 1
+    }
+
+    if (!item1.completedAtTimestamp && item2.completedAtTimestamp) {
+      return -1
+    }
+
+    if (!item1.completedAtTimestamp && !item2.completedAtTimestamp) {
+      return item2.lastUpdatedTimestamp - item1.lastUpdatedTimestamp
+    }
+
+    return 0
+  })
 }
 
 export default function App() {
@@ -15,11 +39,35 @@ export default function App() {
   const handleSubmit = () => {
     if (value) {
       setShoppingList([
-        { id: new Date().toTimeString(), name: value },
+        {
+          id: new Date().toTimeString(),
+          name: value,
+          lastUpdatedTimestamp: Date.now(),
+        },
         ...shoppingList,
       ])
       setValue('')
     }
+  }
+
+  const handleDelete = (id: string) => {
+    setShoppingList(shoppingList.filter((item) => item.id !== id))
+  }
+
+  const handleToggleComplete = (id: string) => {
+    setShoppingList(
+      shoppingList.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              lastUpdatedTimestamp: Date.now(),
+              completedAtTimestamp: item.completedAtTimestamp
+                ? undefined
+                : Date.now(),
+            }
+          : item
+      )
+    )
   }
 
   return (
@@ -27,9 +75,15 @@ export default function App() {
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
       stickyHeaderIndices={[0]}
-      data={shoppingList}
+      data={orderShoppingList(shoppingList)}
       renderItem={({ item }) => (
-        <ShoppingListItem key={item.id} name={item.name} />
+        <ShoppingListItem
+          key={item.id}
+          name={item.name}
+          isCompleted={!!item.completedAtTimestamp}
+          onDelete={() => handleDelete(item.id)}
+          onToggleComplete={() => handleToggleComplete(item.id)}
+        />
       )}
       ListEmptyComponent={
         <View style={styles.listEmptyContainer}>
@@ -55,7 +109,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.white,
-    padding: 12,
+    paddingVertical: 12,
   },
   contentContainer: {
     paddingBottom: 24,
