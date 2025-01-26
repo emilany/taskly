@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react'
-import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native'
+import {
+  FlatList,
+  LayoutAnimation,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native'
 import { ShoppingListItem } from '../components/ShoppingListItem'
 import { theme } from '../theme'
 import { orderShoppingList } from '../utils/helpers'
@@ -15,7 +22,10 @@ export default function App() {
   useEffect(() => {
     const fetchInitial = async () => {
       const data = await getFromStorage(storageKey)
-      if (data) setShoppingList(data)
+      if (data) {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+        setShoppingList(data)
+      }
     }
     fetchInitial()
   }, [])
@@ -30,6 +40,7 @@ export default function App() {
         },
         ...shoppingList,
       ]
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
       setShoppingList(updatedShoppingList)
       saveToStorage(storageKey, updatedShoppingList)
       setValue('')
@@ -38,6 +49,7 @@ export default function App() {
 
   const handleDelete = (id: string) => {
     const updatedShoppingList = shoppingList.filter((item) => item.id !== id)
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     setShoppingList(updatedShoppingList)
     saveToStorage(storageKey, updatedShoppingList)
   }
@@ -54,6 +66,7 @@ export default function App() {
           }
         : item
     )
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     setShoppingList(updatedShoppingList)
     saveToStorage(storageKey, updatedShoppingList)
   }
