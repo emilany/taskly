@@ -6,20 +6,38 @@ import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { TimeSegment } from '../../components/TimeSegment'
 import { theme } from '../../theme'
 import { registerForPushNotificationsAsync } from '../../utils/notification'
-import { CountdownStatus } from '../../utils/types'
+import { getFromStorage, saveToStorage } from '../../utils/storage'
+import { CountdownStatus, PersistedCountdownState } from '../../utils/types'
 
-// 10 secs from now
-const timestamp = Date.now() + 10 * 1000
+// 10secs
+const frequency = 10
+const frequencyInMs = frequency * 1000
+
+const countdownStorageKey = 'taskly-countdown'
 
 export default function CounterScreen() {
+  const [countdownState, setCountdownState] =
+    useState<PersistedCountdownState>()
   const [status, setStatus] = useState<CountdownStatus>({
     isOverdue: false,
     distance: {},
   })
-  const [secondsElapsed, setSecondsElapsed] = useState(0)
+
+  const lastCompletedTimestamp = countdownState?.completedAtTimestamps[0]
+
+  useEffect(() => {
+    const init = async () => {
+      const data = await getFromStorage(countdownStorageKey)
+      setCountdownState(data)
+    }
+    init()
+  }, [])
 
   useEffect(() => {
     const intervalId = setInterval(() => {
+      const timestamp = lastCompletedTimestamp
+        ? lastCompletedTimestamp + frequencyInMs
+        : Date.now()
       const isOverdue = isBefore(timestamp, Date.now())
       const distance = intervalToDuration(
         isOverdue
@@ -27,26 +45,24 @@ export default function CounterScreen() {
           : { start: Date.now(), end: timestamp }
       )
       setStatus({ isOverdue, distance })
-
-      setSecondsElapsed((current) => current + 1)
     }, 1000)
 
     return () => {
       clearInterval(intervalId)
     }
-  }, [])
+  }, [lastCompletedTimestamp])
 
   const scheduleNotification = async () => {
+    let pushNotificationId
     const result = await registerForPushNotificationsAsync()
     if (result === 'granted') {
-      await Notifications.scheduleNotificationAsync({
+      pushNotificationId = await Notifications.scheduleNotificationAsync({
         content: {
-          title: `I'm a notification from your app`,
+          title: 'The thing is due!',
         },
         trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.DAILY,
-          hour: 0,
-          minute: 0,
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: frequency,
         },
       })
     } else {
@@ -57,6 +73,23 @@ export default function CounterScreen() {
         )
       }
     }
+
+    if (countdownState?.currentNotificationId) {
+      await Notifications.cancelScheduledNotificationAsync(
+        countdownState?.currentNotificationId
+      )
+    }
+
+    const newCountdownState: PersistedCountdownState = {
+      currentNotificationId: pushNotificationId,
+      completedAtTimestamps: countdownState
+        ? [Date.now(), ...countdownState.completedAtTimestamps]
+        : [Date.now()],
+    }
+
+    setCountdownState(newCountdownState)
+
+    await saveToStorage(countdownStorageKey, newCountdownState)
   }
 
   return (
@@ -103,7 +136,7 @@ export default function CounterScreen() {
         activeOpacity={0.8}
         onPress={scheduleNotification}
       >
-        <Text style={styles.buttonText}>Schedule notification</Text>
+        <Text style={styles.buttonText}>I've done the thing!</Text>
       </TouchableOpacity>
     </View>
   )

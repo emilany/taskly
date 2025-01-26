@@ -11,3 +11,8 @@ export type CountdownStatus = {
   isOverdue: boolean
   distance: Duration
 }
+
+export type PersistedCountdownState = {
+  currentNotificationId: string | undefined
+  completedAtTimestamps: number[]
+}
