@@ -22,6 +22,7 @@ const Layout = () => {
         name="counter"
         options={{
           title: 'Counter',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons
               name="access-time-filled"
