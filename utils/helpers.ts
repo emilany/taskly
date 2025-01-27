@@ -21,3 +21,5 @@ export const orderShoppingList = (shoppingList: ShoppingListItemType[]) => {
     return 0
   })
 }
+
+export const countdownStorageKey = 'taskly-countdown'

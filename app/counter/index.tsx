@@ -2,9 +2,17 @@ import { intervalToDuration, isBefore } from 'date-fns'
 import * as Device from 'expo-device'
 import * as Notifications from 'expo-notifications'
 import { useEffect, useState } from 'react'
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import {
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native'
 import { TimeSegment } from '../../components/TimeSegment'
 import { theme } from '../../theme'
+import { countdownStorageKey } from '../../utils/helpers'
 import { registerForPushNotificationsAsync } from '../../utils/notification'
 import { getFromStorage, saveToStorage } from '../../utils/storage'
 import { CountdownStatus, PersistedCountdownState } from '../../utils/types'
@@ -13,9 +21,8 @@ import { CountdownStatus, PersistedCountdownState } from '../../utils/types'
 const frequency = 10
 const frequencyInMs = frequency * 1000
 
-const countdownStorageKey = 'taskly-countdown'
-
 export default function CounterScreen() {
+  const [isLoading, setIsLoading] = useState(true)
   const [countdownState, setCountdownState] =
     useState<PersistedCountdownState>()
   const [status, setStatus] = useState<CountdownStatus>({
@@ -38,6 +45,7 @@ export default function CounterScreen() {
       const timestamp = lastCompletedTimestamp
         ? lastCompletedTimestamp + frequencyInMs
         : Date.now()
+      setIsLoading(!lastCompletedTimestamp)
       const isOverdue = isBefore(timestamp, Date.now())
       const distance = intervalToDuration(
         isOverdue
@@ -90,6 +98,14 @@ export default function CounterScreen() {
     setCountdownState(newCountdownState)
 
     await saveToStorage(countdownStorageKey, newCountdownState)
+  }
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator />
+      </View>
+    )
   }
 
   return (
@@ -175,5 +191,10 @@ const styles = StyleSheet.create({
   },
   overdueText: {
     color: theme.colors.white,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 })
